@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Daily Reflection Tree</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d0f14;
+  --surface: #13161d;
+  --surface2: #1a1e28;
+  --border: rgba(255,255,255,0.07);
+  --border-hover: rgba(255,255,255,0.18);
+  --text: #e8e4dc;
+  --text-muted: #8a8680;
+  --text-dim: #5a5752;
+  --accent: #c9a96e;
+  --accent-dim: rgba(201,169,110,0.10);
+  --green: #6ba58a;
+  --blue: #7b9fc4;
+}
+
+html, body {
+  min-height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 300;
+  line-height: 1.7;
+}
+
+body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 2.5rem 1.2rem 5rem;
+}
+
+#app { width: 100%; max-width: 620px; }
+
+.header {
+  text-align: center;
+  margin-bottom: 2.8rem;
+  animation: fadeUp 0.8s ease both;
+}
+.header-label {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--accent);
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+}
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+/* Progress */
+.progress-wrap {
+  margin-bottom: 2.5rem;
+  animation: fadeUp 0.8s 0.1s ease both;
+}
+.progress-track {
+  height: 1px;
+  background: var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 1px;
+  transition: width 0.7s cubic-bezier(0.4,0,0.2,1);
+}
+.progress-labels {
+  display: flex;
+  justify-content: space-between;
+}
+.progress-label {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  transition: color 0.4s ease;
+}
+.progress-label.active { color: var(--accent); }
+.progress-label.axis2.active { color: var(--green); }
+.progress-label.axis3.active { color: var(--blue); }
+
+/* Node container transition */
+#nodeWrap {
+  transition: opacity 0.28s ease, transform 0.28s ease;
+}
+#nodeWrap.hidden {
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+}
+
+/* Card */
+.node-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: 16px;
+  padding: 2rem 2.2rem 1.8rem;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 1.1rem;
+}
+
+.node-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.12rem;
+  font-weight: 400;
+  line-height: 1.78;
+  color: var(--text);
+  margin-bottom: 1.6rem;
+}
+
+.node-text.reflection-text {
+  font-size: 1rem;
+  font-style: italic;
+  color: #c8c0b0;
+  border-left: 1.5px solid var(--accent);
+  padding-left: 1.1rem;
+  line-height: 1.85;
+  margin-bottom: 1.4rem;
+}
+
+.node-text.start-text {
+  font-size: 1.05rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 1.6rem;
+}
+
+.node-text.bridge-text {
+  font-size: 0.96rem;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-bottom: 0;
+}
+
+/* Options */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.opt-btn {
+  background: transparent;
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.82rem 1.15rem;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 300;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.5;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.18s ease, color 0.18s ease;
+}
+.opt-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  transform: translateX(3px);
+}
+.opt-btn.selected {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+/* Continue / action buttons */
+.action-row {
+  margin-top: 1.4rem;
+}
+.continue-btn {
+  background: transparent;
+  border: 0.5px solid rgba(201,169,110,0.4);
+  border-radius: 8px;
+  padding: 0.6rem 1.5rem;
+  color: var(--accent);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.07em;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.continue-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+
+/* Summary */
+.summary-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.5rem; }
+.summary-axis {
+  background: var(--surface2);
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+}
+.summary-axis-label {
+  font-size: 10px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 2px;
+}
+.summary-axis-dominant {
+  font-size: 0.94rem;
+  font-weight: 500;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.summary-axis-body {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+.closing-insight {
+  margin-top: 1.4rem;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--text-muted);
+  text-align: center;
+  padding-top: 1.3rem;
+  border-top: 0.5px solid var(--border);
+}
+
+/* End */
+.end-wrap {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+.end-wrap .goodbye {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.45rem;
+  font-weight: 400;
+  font-style: italic;
+  color: var(--text-muted);
+}
+.end-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  opacity: 0.5;
+  margin: 1.4rem auto 0;
+}
+.restart-btn {
+  margin-top: 2.2rem;
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0.62rem;
+  color: var(--text-dim);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 0.18s, color 0.18s;
+}
+.restart-btn:hover { border-color: var(--border-hover); color: var(--text-muted); }
+
+/* Spinner for auto-advance nodes */
+.auto-advancing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1.2rem;
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+}
+.spinner {
+  width: 12px; height: 12px;
+  border: 1px solid var(--text-dim);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-label">End of Day</div>
+    <h1>The Daily Reflection Tree</h1>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-track"><div class="progress-fill" id="pfill" style="width:0%"></div></div>
+    <div class="progress-labels">
+      <span class="progress-label axis1" id="pl1">Locus</span>
+      <span class="progress-label axis2" id="pl2">Orientation</span>
+      <span class="progress-label axis3" id="pl3">Radius</span>
+    </div>
+  </div>
+  <div id="nodeWrap"></div>
+</div>
+
+<script>
+// ─── TREE DATA ──────────────────────────────────────────────────────────────
+// Explicit routing table: after each node, what comes next?
+// This replaces fragile parent-child traversal for nodes with parentId: null.
+const FLOW = {
+  START:             'A1_OPEN',
+  A1_OPEN:           'A1_D1',         // decision
+  A1_D1:             null,            // routes to A1_Q_AGENCY_HIGH or A1_Q_AGENCY_LOW
+  A1_Q_AGENCY_HIGH:  'A1_D2_HIGH',    // decision
+  A1_Q_AGENCY_LOW:   'A1_D2_LOW',     // decision
+  A1_D2_HIGH:        null,            // routes to A1_Q2_INTERNAL or A1_Q2_MIXED
+  A1_D2_LOW:         null,            // routes to A1_Q2_MIXED or A1_Q2_EXTERNAL
+  A1_Q2_INTERNAL:    'A1_D3',
+  A1_Q2_MIXED:       'A1_D3',
+  A1_Q2_EXTERNAL:    'A1_D3',
+  A1_D3:             null,            // routes to A1_R_INT or A1_R_EXT
+  A1_R_INT:          'BRIDGE_1_2',
+  A1_R_EXT:          'BRIDGE_1_2',
+  BRIDGE_1_2:        'A2_OPEN',
+  A2_OPEN:           'A2_D1',
+  A2_D1:             null,            // routes to A2_Q_CONTRIBUTION or A2_Q_ENTITLEMENT
+  A2_Q_CONTRIBUTION: 'A2_D2_CONT',
+  A2_Q_ENTITLEMENT:  'A2_D2_ENT',
+  A2_D2_CONT:        null,            // routes to A2_Q2_GIVE or A2_Q2_MIXED
+  A2_D2_ENT:         null,            // routes to A2_Q2_MIXED or A2_Q2_OWED
+  A2_Q2_GIVE:        'A2_D3',
+  A2_Q2_MIXED:       'A2_D3',
+  A2_Q2_OWED:        'A2_D3',
+  A2_D3:             null,            // routes to A2_R_CONT or A2_R_ENT
+  A2_R_CONT:         'BRIDGE_2_3',
+  A2_R_ENT:          'BRIDGE_2_3',
+  BRIDGE_2_3:        'A3_OPEN',
+  A3_OPEN:           'A3_D1',
+  A3_D1:             null,            // routes to A3_Q_SELF, A3_Q_TEAM, or A3_Q_OTHER
+  A3_Q_SELF:         'A3_D2',
+  A3_Q_TEAM:         'A3_D2',
+  A3_Q_OTHER:        'A3_D2',
+  A3_D2:             null,            // routes to A3_Q2_WIDE or A3_Q2_NARROW
+  A3_Q2_WIDE:        'A3_D3',
+  A3_Q2_NARROW:      'A3_D3',
+  A3_D3:             null,            // routes to A3_R_WIDE or A3_R_NARROW
+  A3_R_WIDE:         'SUMMARY',
+  A3_R_NARROW:       'SUMMARY',
+  SUMMARY:           'END',
+  END:               null
+};
+
+// Decision routing rules — each rule: [type, ...args, target]
+// type 'answer': match answer of sourceNode against values[]
+// type 'signal': compare accumulated signal count
+const DECISIONS = {
+  A1_D1: [
+    { type: 'answer', src: 'A1_OPEN', values: ['Sunny — things clicked', 'Mixed — patches of both'], target: 'A1_Q_AGENCY_HIGH' },
+    { type: 'answer', src: 'A1_OPEN', values: ['Cloudy — low energy, low output', 'Stormy — friction everywhere'], target: 'A1_Q_AGENCY_LOW' }
+  ],
+  A1_D2_HIGH: [
+    { type: 'answer', src: 'A1_Q_AGENCY_HIGH', values: ['I prepared for it', 'I adapted when things shifted'], target: 'A1_Q2_INTERNAL' },
+    { type: 'answer', src: 'A1_Q_AGENCY_HIGH', values: ['The team came through', 'Luck — right place, right time'], target: 'A1_Q2_MIXED' }
+  ],
+  A1_D2_LOW: [
+    { type: 'answer', src: 'A1_Q_AGENCY_LOW', values: ['What I could still control', 'Whether to push through or give up'], target: 'A1_Q2_MIXED' },
+    { type: 'answer', src: 'A1_Q_AGENCY_LOW', values: ['What others should have done differently', 'How unfair the situation was'], target: 'A1_Q2_EXTERNAL' }
+  ],
+  A1_D3: [
+    { type: 'signal', axis: 'axis1', pole: 'internal', op: '>=', val: 2, target: 'A1_R_INT' },
+    { type: 'signal', axis: 'axis1', pole: 'internal', op: '<',  val: 2, target: 'A1_R_EXT' }
+  ],
+  A2_D1: [
+    { type: 'answer', src: 'A2_OPEN', values: ['Into doing my work well', 'Into helping someone else'], target: 'A2_Q_CONTRIBUTION' },
+    { type: 'answer', src: 'A2_OPEN', values: ['Into protecting myself from wasted effort', 'Into wondering if I was being recognized'], target: 'A2_Q_ENTITLEMENT' }
+  ],
+  A2_D2_CONT: [
+    { type: 'answer', src: 'A2_Q_CONTRIBUTION', values: ['Yes, and it felt natural'], target: 'A2_Q2_GIVE' },
+    { type: 'answer', src: 'A2_Q_CONTRIBUTION', values: ['Yes, but I noticed I wanted credit for it', 'No — I was running on empty myself', "I don't think I had the opportunity"], target: 'A2_Q2_MIXED' }
+  ],
+  A2_D2_ENT: [
+    { type: 'answer', src: 'A2_Q_ENTITLEMENT', values: ['I got more than I expected', 'About right — fair exchange'], target: 'A2_Q2_MIXED' },
+    { type: 'answer', src: 'A2_Q_ENTITLEMENT', values: ['Less than I put in', 'Significantly less — I was overlooked'], target: 'A2_Q2_OWED' }
+  ],
+  A2_D3: [
+    { type: 'signal', axis: 'axis2', pole: 'contribution', op: '>=', val: 2, target: 'A2_R_CONT' },
+    { type: 'signal', axis: 'axis2', pole: 'contribution', op: '<',  val: 2, target: 'A2_R_ENT' }
+  ],
+  A3_D1: [
+    { type: 'answer', src: 'A3_OPEN', values: ['Just me — it was mine to deal with'], target: 'A3_Q_SELF' },
+    { type: 'answer', src: 'A3_OPEN', values: ['My immediate team — we were all in it'], target: 'A3_Q_TEAM' },
+    { type: 'answer', src: 'A3_OPEN', values: ['A specific person who was struggling more than me', 'The people we\'re ultimately serving — customers, users, the mission'], target: 'A3_Q_OTHER' }
+  ],
+  A3_D2: [
+    { type: 'signal', axis: 'axis3', pole: 'other', op: '>=', val: 1, target: 'A3_Q2_WIDE' },
+    { type: 'signal', axis: 'axis3', pole: 'other', op: '<',  val: 1, target: 'A3_Q2_NARROW' }
+  ],
+  A3_D3: [
+    { type: 'signal', axis: 'axis3', pole: 'other', op: '>=', val: 2, target: 'A3_R_WIDE' },
+    { type: 'signal', axis: 'axis3', pole: 'other', op: '<',  val: 2, target: 'A3_R_NARROW' }
+  ]
+};
+
+// Node definitions
+const NODES = {
+  START: {
+    type: 'start',
+    text: 'Good evening. The day is done — almost. Before you close it, take five minutes to understand it. No judgement. No scoring. Just honest reflection.'
+  },
+  A1_OPEN: {
+    type: 'question',
+    badge: 'Locus · opening',
+    text: 'If today were a weather report, what would it be?',
+    options: ['Sunny — things clicked', 'Cloudy — low energy, low output', 'Stormy — friction everywhere', 'Mixed — patches of both']
+  },
+  A1_D1: { type: 'decision' },
+  A1_Q_AGENCY_HIGH: {
+    type: 'question',
+    badge: 'Locus · agency',
+    text: 'You said "{A1_OPEN}". When something went well today, what drove it?',
+    options: ['I prepared for it', 'I adapted when things shifted', 'The team came through', 'Luck — right place, right time'],
+    signal: 'axis1:internal'
+  },
+  A1_Q_AGENCY_LOW: {
+    type: 'question',
+    badge: 'Locus · agency',
+    text: 'You said "{A1_OPEN}". When things got hard, where did your mind go first?',
+    options: ['What I could still control', 'What others should have done differently', 'How unfair the situation was', 'Whether to push through or give up'],
+    signal: 'axis1:external'
+  },
+  A1_D2_HIGH: { type: 'decision' },
+  A1_D2_LOW: { type: 'decision' },
+  A1_Q2_INTERNAL: {
+    type: 'question',
+    badge: 'Locus · response',
+    text: 'Think of one moment today where something didn\'t go as planned. What did you do?',
+    options: ['Changed my approach on the spot', 'Decided it wasn\'t worth my energy', 'Asked for help and kept moving', 'Sat with it longer than I should have'],
+    signal: 'axis1:internal'
+  },
+  A1_Q2_MIXED: {
+    type: 'question',
+    badge: 'Locus · choice',
+    text: 'Was there a moment today where you had more control than you initially thought?',
+    options: ['Yes — I realized I could adjust something', 'Maybe — I didn\'t think about it that way', 'Not really — the constraints were real', 'I\'m not sure'],
+    signal: 'axis1:internal'
+  },
+  A1_Q2_EXTERNAL: {
+    type: 'question',
+    badge: 'Locus · replay',
+    text: 'If you could replay one interaction from today, what would you change about your own response?',
+    options: ['I\'d speak up sooner', 'I\'d stay calmer', 'I\'d ask more questions instead of assuming', 'Honestly, nothing — the other person was the problem'],
+    signal: 'axis1:external'
+  },
+  A1_D3: { type: 'decision' },
+  A1_R_INT: {
+    type: 'reflection',
+    badge: 'Locus · reflection',
+    text: 'You stayed in the driver\'s seat today — even when the road was rough. That\'s not optimism. That\'s a skill. Agency isn\'t about controlling outcomes; it\'s about not outsourcing your response to circumstances.',
+    signal: 'axis1:internal'
+  },
+  A1_R_EXT: {
+    type: 'reflection',
+    badge: 'Locus · reflection',
+    text: 'Hard days pull attention outward — to what others did, what luck dealt, what wasn\'t fair. That\'s human. But somewhere today, you made a call. Even \'doing nothing\' was a choice. That\'s where your agency lives.',
+    signal: 'axis1:external'
+  },
+  BRIDGE_1_2: {
+    type: 'bridge',
+    text: 'You\'ve thought about how you handled today. Now let\'s look at what you gave.'
+  },
+  A2_OPEN: {
+    type: 'question',
+    badge: 'Orientation · opening',
+    text: 'Think about your energy today — where did most of it go?',
+    options: ['Into doing my work well', 'Into helping someone else', 'Into protecting myself from wasted effort', 'Into wondering if I was being recognized']
+  },
+  A2_D1: { type: 'decision' },
+  A2_Q_CONTRIBUTION: {
+    type: 'question',
+    badge: 'Orientation · giving',
+    text: 'Was there a moment today where you gave something — time, knowledge, effort — without expecting it back?',
+    options: ['Yes, and it felt natural', 'Yes, but I noticed I wanted credit for it', 'No — I was running on empty myself', "I don't think I had the opportunity"],
+    signal: 'axis2:contribution'
+  },
+  A2_Q_ENTITLEMENT: {
+    type: 'question',
+    badge: 'Orientation · fairness',
+    text: 'When you think about what you deserved today — recognition, resources, support — how does it feel compared to what you got?',
+    options: ['I got more than I expected', 'About right — fair exchange', 'Less than I put in', 'Significantly less — I was overlooked'],
+    signal: 'axis2:entitlement'
+  },
+  A2_D2_CONT: { type: 'decision' },
+  A2_D2_ENT: { type: 'decision' },
+  A2_Q2_GIVE: {
+    type: 'question',
+    badge: 'Orientation · tomorrow',
+    text: 'What\'s something you could give tomorrow — one specific thing — that nobody asked you for?',
+    options: ['Feedback that would actually help someone', 'Taking something off a colleague\'s plate', 'Making a process clearer for the next person', 'Nothing comes to mind right now'],
+    signal: 'axis2:contribution'
+  },
+  A2_Q2_MIXED: {
+    type: 'question',
+    badge: 'Orientation · honesty',
+    text: 'If you had to be honest: today, were you more focused on what you owed the team, or what the team owed you?',
+    options: ['What I owed — I was thinking about my contribution', 'What they owed — I was keeping score', 'Both, switching back and forth', 'Neither — I was just trying to get through the day'],
+    signal: 'axis2:contribution'
+  },
+  A2_Q2_OWED: {
+    type: 'question',
+    badge: 'Orientation · quiet giving',
+    text: 'The feeling of being owed is real. But what did you give today — even small — that nobody might notice?',
+    options: ['I showed up and did the work, even when it was hard', 'I kept a difficult feeling to myself so others weren\'t affected', 'I stayed later than I needed to', 'Honestly, I\'m not sure I gave much today'],
+    signal: 'axis2:entitlement'
+  },
+  A2_D3: { type: 'decision' },
+  A2_R_CONT: {
+    type: 'reflection',
+    badge: 'Orientation · reflection',
+    text: 'You were oriented toward giving today. That\'s not self-sacrifice — it\'s the most durable source of professional meaning. People who focus on contribution don\'t wait to feel motivated. They act, and the meaning follows.',
+    signal: 'axis2:contribution'
+  },
+  A2_R_ENT: {
+    type: 'reflection',
+    badge: 'Orientation · reflection',
+    text: 'Noticing what you deserve is human — especially after effort that went unrecognized. But entitlement, when it runs quietly in the background, converts work into ledger entries. What would happen if you stopped counting for one day?',
+    signal: 'axis2:entitlement'
+  },
+  BRIDGE_2_3: {
+    type: 'bridge',
+    text: 'You\'ve reflected on how you acted and what you gave. Now, one last shift — how wide was your world today?'
+  },
+  A3_OPEN: {
+    type: 'question',
+    badge: 'Radius · opening',
+    text: 'When you think about today\'s biggest challenge, who comes to mind?',
+    options: ['Just me — it was mine to deal with', 'My immediate team — we were all in it', 'A specific person who was struggling more than me', 'The people we\'re ultimately serving — customers, users, the mission']
+  },
+  A3_D1: { type: 'decision' },
+  A3_Q_SELF: {
+    type: 'question',
+    badge: 'Radius · impact',
+    text: 'Was there anyone today whose day was affected by how you showed up — positively or negatively?',
+    options: ['Yes — someone was directly impacted by my work', 'Probably, but I didn\'t track it', 'I\'m not sure my work touched anyone else today', 'I deliberately kept to myself today'],
+    signal: 'axis3:self'
+  },
+  A3_Q_TEAM: {
+    type: 'question',
+    badge: 'Radius · team',
+    text: 'In a team situation, did you think about the group\'s need or mostly about your part in it?',
+    options: ['The group\'s outcome mattered more than my contribution', 'I did my part and trusted the team with theirs', 'I was more worried about my piece than the whole', 'I lost sight of the team in the stress of the day'],
+    signal: 'axis3:team'
+  },
+  A3_Q_OTHER: {
+    type: 'question',
+    badge: 'Radius · perspective',
+    text: 'When you thought about that person or those people — did it make your own challenge feel smaller, larger, or just different?',
+    options: ['Smaller — it gave me perspective', 'Larger — I felt more responsible', 'Different — it reframed the problem', 'I thought about it briefly but came back to my own stress'],
+    signal: 'axis3:other'
+  },
+  A3_D2: { type: 'decision' },
+  A3_Q2_WIDE: {
+    type: 'question',
+    badge: 'Radius · meaning',
+    text: 'When you contribute to something beyond yourself, how does that typically affect your own experience of the work?',
+    options: ['It makes difficult days more bearable', 'It\'s energizing — I work better for it', 'It\'s meaningful but also draining', 'I\'ve never really thought about it that way'],
+    signal: 'axis3:other'
+  },
+  A3_Q2_NARROW: {
+    type: 'question',
+    badge: 'Radius · reach',
+    text: 'Is there someone — a colleague, a user, anyone — whose experience of today you don\'t know yet but could check on?',
+    options: ['Yes — and I probably should', 'Maybe — I can think of someone', 'Not really — my work is pretty independent', 'I hadn\'t thought about anyone else\'s day'],
+    signal: 'axis3:self'
+  },
+  A3_D3: { type: 'decision' },
+  A3_R_WIDE: {
+    type: 'reflection',
+    badge: 'Radius · reflection',
+    text: 'Your radius extended beyond yourself today. Maslow called this self-transcendence — not self-sacrifice, but the shift from \'what do I need?\' to \'what does the situation need from me?\' That shift is the difference between enduring work and finding it meaningful.',
+    signal: 'axis3:other'
+  },
+  A3_R_NARROW: {
+    type: 'reflection',
+    badge: 'Radius · reflection',
+    text: 'Today your world was mostly your own. That\'s not a flaw — some days demand inward focus just to survive. But notice: most suffering at work shrinks when we look outward at someone else\'s challenge. You don\'t have to stop mattering to yourself. You just have to start mattering to someone else too.',
+    signal: 'axis3:self'
+  },
+  SUMMARY: { type: 'summary' },
+  END:     { type: 'end', text: 'See you tomorrow.' }
+};
+
+// Summary content
+const SUMMARY_DATA = {
+  axis1: {
+    internal: { label: 'Internal — Victor', body: 'You owned your responses today — that\'s the foundation everything else builds on.' },
+    external: { label: 'External — Victim',  body: 'Tomorrow, watch for one small moment where you had more control than you first thought.' }
+  },
+  axis2: {
+    contribution: { label: 'Contribution',  body: 'You gave today. That\'s a practice, not a personality — keep practicing.' },
+    entitlement:  { label: 'Entitlement',   body: 'The ledger can wait. What if tomorrow you gave one thing and didn\'t track whether it came back?' }
+  },
+  axis3: {
+    other: { label: 'Altrocentric',   body: 'Your concern extended outward today. That\'s where the deepest meaning in work lives.' },
+    team:  { label: 'Team-focused',   body: 'You thought beyond yourself — the team was in your frame. That\'s a meaningful radius.' },
+    self:  { label: 'Self-centric',   body: 'Tomorrow, look up once. Notice someone else\'s challenge. You don\'t have to fix it — just see it.' }
+  },
+  closing: {
+    internal_contribution_other: 'Agency. Giving. Perspective. Today had all three. That\'s a good day — even if it didn\'t feel like one.',
+    internal_contribution_self:  'You acted well and gave well. Widen the circle tomorrow.',
+    internal_contribution_team:  'You gave and kept the team in view. Use that momentum.',
+    internal_entitlement_other:  'You saw the bigger picture — use that clarity to stop keeping score.',
+    internal_entitlement_self:   'You had agency today. Now practice using it in service of something beyond yourself.',
+    internal_entitlement_team:   'Your team was in your mind — let that awareness guide your giving.',
+    external_contribution_other: 'You gave without always feeling in control. That\'s real generosity.',
+    external_contribution_self:  'You gave today. Tomorrow, see if doing that for someone specific changes how the day feels.',
+    external_contribution_team:  'Hard day, but you still gave. The team noticed, even if nothing was said.',
+    external_entitlement_other:  'Hard day. But you still looked outward. Hold onto that instinct.',
+    external_entitlement_self:   'Tomorrow is a reset. One moment of control. One thing given. One look outward. Start there.',
+    external_entitlement_team:   'The team was on your mind — that\'s the seed. Start there tomorrow.'
+  }
+};
+
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let state = {
+  current: 'START',
+  answers: {},
+  signals: {
+    axis1: { internal: 0, external: 0 },
+    axis2: { contribution: 0, entitlement: 0 },
+    axis3: { other: 0, self: 0, team: 0 }
+  },
+  stepCount: 0,
+  totalInteractiveSteps: 10  // question nodes only
+};
+
+// ─── ENGINE ─────────────────────────────────────────────────────────────────
+function applySignal(signal) {
+  if (!signal) return;
+  const [axis, pole] = signal.split(':');
+  if (state.signals[axis] && state.signals[axis][pole] !== undefined) {
+    state.signals[axis][pole]++;
+  }
+}
+
+function interpolate(text) {
+  return text.replace(/\{(\w+)\}/g, (_, id) => state.answers[id] || '…');
+}
+
+function getDominant(axis) {
+  const poles = state.signals[axis];
+  return Object.entries(poles).sort((a, b) => b[1] - a[1])[0][0];
+}
+
+function resolveDecision(nodeId) {
+  const rules = DECISIONS[nodeId];
+  if (!rules) return null;
+  for (const rule of rules) {
+    if (rule.type === 'answer') {
+      const ans = state.answers[rule.src];
+      if (ans && rule.values.includes(ans)) return rule.target;
+    } else if (rule.type === 'signal') {
+      const actual = state.signals[rule.axis][rule.pole] || 0;
+      const v = rule.val;
+      const pass = rule.op === '>='  ? actual >= v
+                 : rule.op === '<'   ? actual <  v
+                 : rule.op === '>'   ? actual >  v
+                 : rule.op === '<='  ? actual <= v : false;
+      if (pass) return rule.target;
+    }
+  }
+  // Fallback: last rule's target
+  return rules[rules.length - 1].target;
+}
+
+function nextNode(nodeId) {
+  const node = NODES[nodeId];
+  if (node.type === 'decision') return resolveDecision(nodeId);
+  return FLOW[nodeId] || null;
+}
+
+// ─── RENDER ─────────────────────────────────────────────────────────────────
+function updateProgress() {
+  const id = state.current;
+  const pct = Math.min(98, (state.stepCount / state.totalInteractiveSteps) * 100);
+  document.getElementById('pfill').style.width = pct + '%';
+
+  const inAxis1 = id.startsWith('A1') || id === 'START';
+  const inAxis2 = id.startsWith('A2') || id === 'BRIDGE_1_2';
+  const inAxis3 = id.startsWith('A3') || id === 'BRIDGE_2_3';
+  const inSummary = id === 'SUMMARY' || id === 'END';
+
+  document.getElementById('pl1').className = 'progress-label axis1' + (inAxis1 || inAxis2 || inAxis3 || inSummary ? ' active' : '');
+  document.getElementById('pl2').className = 'progress-label axis2' + (inAxis2 || inAxis3 || inSummary ? ' active' : '');
+  document.getElementById('pl3').className = 'progress-label axis3' + (inAxis3 || inSummary ? ' active' : '');
+}
+
+function buildSummaryHTML() {
+  const a1 = getDominant('axis1');
+  const a2 = getDominant('axis2');
+  const a3 = getDominant('axis3');
+  const key = `${a1}_${a2}_${a3}`;
+  const closing = SUMMARY_DATA.closing[key] || SUMMARY_DATA.closing['external_entitlement_self'];
+  return `
+    <div class="summary-grid">
+      <div class="summary-axis">
+        <div class="summary-axis-label">Locus of Control</div>
+        <div class="summary-axis-dominant">${SUMMARY_DATA.axis1[a1].label}</div>
+        <div class="summary-axis-body">${SUMMARY_DATA.axis1[a1].body}</div>
+      </div>
+      <div class="summary-axis">
+        <div class="summary-axis-label">Contribution Orientation</div>
+        <div class="summary-axis-dominant">${SUMMARY_DATA.axis2[a2].label}</div>
+        <div class="summary-axis-body">${SUMMARY_DATA.axis2[a2].body}</div>
+      </div>
+      <div class="summary-axis">
+        <div class="summary-axis-label">Radius of Concern</div>
+        <div class="summary-axis-dominant">${SUMMARY_DATA.axis3[a3].label}</div>
+        <div class="summary-axis-body">${SUMMARY_DATA.axis3[a3].body}</div>
+      </div>
+    </div>
+    <div class="closing-insight">${closing}</div>`;
+}
+
+function buildHTML(nodeId) {
+  const node = NODES[nodeId];
+  const { type } = node;
+
+  if (type === 'decision') return '';
+
+  if (type === 'end') {
+    return `<div class="node-card end-wrap">
+      <p class="goodbye">${node.text}</p>
+      <div class="end-dot"></div>
+      <button class="restart-btn" id="restartBtn">Begin a new session</button>
+    </div>`;
+  }
+
+  if (type === 'summary') {
+    return `<div class="node-card">
+      <span class="badge">Your Day</span>
+      ${buildSummaryHTML()}
+      <div class="action-row"><button class="continue-btn" id="continueBtn">Close session</button></div>
+    </div>`;
+  }
+
+  const text = interpolate(node.text);
+  const badgeHTML = node.badge ? `<span class="badge">${node.badge}</span>` : '';
+
+  if (type === 'start') {
+    return `<div class="node-card">
+      ${badgeHTML}
+      <p class="node-text start-text">${text}</p>
+      <div class="auto-advancing"><span class="spinner"></span><span>Beginning…</span></div>
+    </div>`;
+  }
+
+  if (type === 'bridge') {
+    return `<div class="node-card">
+      ${badgeHTML}
+      <p class="node-text bridge-text">${text}</p>
+      <div class="auto-advancing"><span class="spinner"></span><span>Continuing…</span></div>
+    </div>`;
+  }
+
+  if (type === 'reflection') {
+    return `<div class="node-card">
+      ${badgeHTML}
+      <p class="node-text reflection-text">${text}</p>
+      <div class="action-row"><button class="continue-btn" id="continueBtn">Continue</button></div>
+    </div>`;
+  }
+
+  if (type === 'question') {
+    const opts = node.options.map((o, i) =>
+      `<button class="opt-btn" data-val="${o}" data-idx="${i}">${o}</button>`
+    ).join('');
+    return `<div class="node-card">
+      ${badgeHTML}
+      <p class="node-text">${text}</p>
+      <div class="options">${opts}</div>
+    </div>`;
+  }
+
+  return '';
+}
+
+function render(nodeId) {
+  state.current = nodeId;
+  const node = NODES[nodeId];
+
+  // Skip decision nodes instantly
+  if (node.type === 'decision') {
+    const next = nextNode(nodeId);
+    if (next) render(next);
+    return;
+  }
+
+  if (node.type === 'question') state.stepCount++;
+  updateProgress();
+
+  const wrap = document.getElementById('nodeWrap');
+
+  // Fade out
+  wrap.classList.add('hidden');
+
+  setTimeout(() => {
+    wrap.innerHTML = buildHTML(nodeId);
+    // Fade in
+    wrap.classList.remove('hidden');
+
+    // Apply signal for reflections (they auto-signal on display)
+    if (node.type === 'reflection' && node.signal) {
+      applySignal(node.signal);
+    }
+
+    attachHandlers(nodeId, node);
+
+    // Auto-advance after delay for non-interactive nodes
+    if (node.type === 'start' || node.type === 'bridge') {
+      setTimeout(() => advance(nodeId), 1600);
+    }
+  }, 300);
+}
+
+function advance(nodeId) {
+  const next = nextNode(nodeId);
+  if (next) render(next);
+}
+
+function attachHandlers(nodeId, node) {
+  const continueBtn = document.getElementById('continueBtn');
+  if (continueBtn) {
+    continueBtn.addEventListener('click', () => advance(nodeId));
+  }
+
+  const restartBtn = document.getElementById('restartBtn');
+  if (restartBtn) {
+    restartBtn.addEventListener('click', restartSession);
+  }
+
+  document.querySelectorAll('.opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const val = btn.dataset.val;
+      state.answers[nodeId] = val;
+      if (node.signal) applySignal(node.signal);
+
+      document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+
+      setTimeout(() => advance(nodeId), 480);
+    });
+  });
+}
+
+function restartSession() {
+  state = {
+    current: 'START',
+    answers: {},
+    signals: {
+      axis1: { internal: 0, external: 0 },
+      axis2: { contribution: 0, entitlement: 0 },
+      axis3: { other: 0, self: 0, team: 0 }
+    },
+    stepCount: 0,
+    totalInteractiveSteps: 10
+  };
+  render('START');
+}
+
+// Boot
+window.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => render('START'), 150);
+});
+</script>
+</body>
+</html>
