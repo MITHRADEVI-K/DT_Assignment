@@ -59,7 +59,7 @@ The system is built around a 3-axis psychological model:
 
 Tree Diagram:
 ![Decision Tree](mermaid-diagram)
-
+![AGENT](diagram.png)
 ---
 
 ## Flow Structure
@@ -149,8 +149,7 @@ Example:
 
 ## Tech Stack
 
-Frontend: React.js
-State Management: useState
+Frontend: HTML
 Data Structure: JSON / Tree-based
 
 ---
@@ -169,24 +168,7 @@ A user completes the flow and gains:
 
 * Voice-based interaction
 * Progress tracking dashboard
-* Deeper adaptive reflection paths
-* Mobile-first UI
-* User login and session history
 
 ---
 
-## About
 
-Mithradevi is a Computer Science student with interests in UI/UX design, product thinking, and building meaningful systems.
-
-The long-term goal is to grow into a servant leader by creating systems that help people think better and improve consistently.
-
----
-
-## Note
-
-Even though the submission was delayed, this project reflects genuine effort, curiosity, and alignment with the vision of structured, thoughtful systems.
-
----
-
-Thank you for reviewing.
