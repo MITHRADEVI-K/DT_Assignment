@@ -58,7 +58,7 @@ The system is built around a 3-axis psychological model:
 * Every node leads to a predefined next step
 
 Tree Diagram:
-![Decision Tree](mermaid-diagram)
+![Decision Tree](mermaid-diagram.png)
 ![AGENT](diagram.png)
 ---
 
